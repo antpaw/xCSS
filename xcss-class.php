@@ -47,11 +47,9 @@ class xCSS
 	
 	public function __construct(array $cfg)
 	{
-		set_error_handler(array('xCSS', 'exception_handler'));
-		
 		if(isset($cfg['disable_xCSS']) && $cfg['disable_xCSS'] === TRUE)
 		{
-			$this->exception_handler('xcss_disabled', 'xCSS was disabled via "config.php"! Remove the xCSS <script> tag from your HMTL <head> tag');
+			throw new xCSS_Exception('xcss_disabled');
 		}
 		
 		$this->levelparts = array();
@@ -254,8 +252,11 @@ class xCSS
 	
 	public function calc_string($math)
 	{
-		$calc = create_function(NULL, 'return '.$math.';');
-		return $calc();
+		if(@eval('$result = '.$math.';') === FALSE)
+		{
+			throw new xCSS_Exception('xcss_math_error', array('math' => $math));
+		}
+		return $result;
 	}
 	
 	public function do_math($content)
@@ -358,7 +359,7 @@ class xCSS
 		}
 		else
 		{
-			$this->exception_handler('xcss_file_does_not_exist', 'Cannot find "'.$filepath.'"');
+			throw new xCSS_Exception('xcss_file_does_not_exist', array('file' => $filepath));
 		}
 		
 		return $filecontent;
@@ -823,52 +824,20 @@ class xCSS
 			{
 				if( ! fopen($filepath, 'w'))
 				{
-					$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
+					throw new xCSS_Exception('css_file_unwritable', array('file' => $filepath));
 				}
 			}
 			else
 			{
-				$this->exception_handler('css_dir_unwritable', 'no such directory "'.dirname($filepath).'"');
+				throw new xCSS_Exception('css_dir_unwritable', array('file' => $filepath));
 			}
 		}
 		else if( ! is_writable($filepath))
 		{
-			$this->exception_handler('css_file_unwritable', 'cannot write to the output file "'.$filepath.'", check CHMOD permissions');
+			throw new xCSS_Exception('css_file_unwritable', array('file' => $filepath));
 		}
 		
 		file_put_contents($filepath, utf8_decode($content));
-	}
-	
-	public function exception_handler($exception, $message = NULL, $file = NULL, $line = NULL)
-	{
-		if($this->debugmode)
-		{
-			echo "// Error: '$exception' in file '$file' on line: '$line'\n//\t- $message\n\n";
-		}
-		
-		if(strpos($message, 'create_function') !== FALSE)
-		{
-			$exception = 'xcss_math_error';
-		}
-		
-		switch ($exception)
-		{
-			case 'xcss_math_error':
-				echo 'alert("xCSS Parse error: unable to solve the math operation");'."\n";
-			break;
-			case 'xcss_file_does_not_exist':
-			case 'xcss_disabled':
-			case 'css_file_unwritable':
-			case 'css_dir_unwritable':
-				echo 'alert("xCSS Parse error: '.addslashes($message).'");'."\n";
-			break;
-			case 'xcss_disabled':
-				echo '// '.$message."\n";
-			break;
-			default:
-				echo 'alert("xCSS Parse error: check the syntax of your xCSS files");'."\n";
-			break;
-		}
 	}
 	
 	public function microtime_float()
@@ -884,5 +853,40 @@ class xCSS
 			$time = $this->microtime_float() - $this->debug['xcss_time_start'];
 			echo '// Parsed xCSS in: '.round($time, 6).' seconds'."\n//------------------------------------\n".$this->debug['xcss_output'];
 		}
+	}
+}
+
+class xCSS_Exception extends Exception
+{
+	public function __construct($message, array $variables = NULL, $code = 0)
+	{
+		switch ($message)
+		{
+			case 'xcss_math_error':
+				$message = 'xCSS Parse error: unable to solve this math operation: "'.$variables['math'].'"';
+			break;
+			case 'xcss_file_does_not_exist':
+				$message = 'Cannot find "'.$variables['file'].'"';
+			break;
+			case 'css_file_unwritable':
+			case 'css_dir_unwritable':
+				$message = 'Cannot write to the output file "'.$variables['file'].'", check CHMOD permissions';
+			break;
+			case 'xcss_disabled':
+				echo '// xCSS was disabled via "config.php"! Remove the xCSS <script> tag from your HMTL <head> tag';
+				die();
+			break;
+			default:
+				$message = 'xCSS Parse error: check the syntax of your xCSS files';
+			break;
+		}
+		
+		parent::__construct($message, $code);
+	}
+	
+	public function __toString()
+	{
+		echo sprintf("// %s\nalert(\"%s\");\n// in %s [ %d ]\n", get_class($this), addslashes($this->getMessage()), $this->getFile(), $this->getLine());
+		die();
 	}
 }
