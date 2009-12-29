@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    1.0.0 beta
+ * @version    1.0.0
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -133,6 +133,10 @@ class xCSS
 			'$__semicolon'				=> ';',
 			'$__curlybracketopen'		=> '{',
 			'$__curlybracketclosed'		=> '}',
+			// shortcuts 
+			// it's "a hidden feature" for now
+			'bg:'						=> 'background:',
+			'bgc:'						=> 'background-color:',
 		);
 	}
 	
@@ -181,6 +185,10 @@ class xCSS
 						$fname = explode(':', $fname);
 						$master_content .= $this->read_file($this->path_css_dir.$fname[0])."\n";
 					}
+					if($this->minify_output && strpos($master_content, '/*') !== FALSE)
+					{
+						$master_content = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $master_content);				
+					}
 					rsort($this->final_file);
 					foreach($this->final_file as $fcont)
 					{
@@ -189,7 +197,12 @@ class xCSS
 					foreach($this->hook_files as $fname)
 					{
 						$fname = explode(':', $fname);
-						$master_content .= $this->read_file($this->path_css_dir.$fname[0]);
+						$tmp_file = $this->read_file($this->path_css_dir.$fname[0]);
+						if($this->minify_output && strpos($tmp_file, '/*') !== FALSE)
+						{
+							$tmp_file = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $tmp_file);				
+						}
+						$master_content .= $tmp_file;
 					}
 					$master_content = $this->do_math($master_content);
 					$this->create_file($master_content, $this->master_file);
@@ -806,9 +819,8 @@ class xCSS
 		
 		if($this->minify_output)
 		{
-			// let's remove big spaces, tabs and newlines
 			$content = str_replace(array("\n ", "\n", "\t", '  ', '   '), NULL, $content);
-			$content = str_replace(array(' {', ';}', ': '), array('{', '}', ':'), $content);
+			$content = str_replace(array(' {', ';}', ': ', ', '), array('{', '}', ':', ','), $content);
 		}
 		
 		if($filename === 'string')
@@ -817,7 +829,6 @@ class xCSS
 		}
 		
 		$filepath = $this->path_css_dir.$filename;
-			
 		if( ! file_exists($filepath))
 		{
 			if(is_dir(dirname($filepath)))
@@ -884,7 +895,7 @@ class xCSS_Exception extends Exception
 		parent::__construct($message, $code);
 	}
 	
-	public function __toString()
+	public function __tostring()
 	{
 		echo sprintf("// %s\nalert(\"%s\");\n// in %s [ %d ]\n", get_class($this), addslashes($this->getMessage()), $this->getFile(), $this->getLine());
 		die();

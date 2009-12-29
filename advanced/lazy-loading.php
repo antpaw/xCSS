@@ -7,7 +7,7 @@
  * <?php include 'path/to/lazy-loading.php' ?>
  */
 
-define('XCSSCONFIG', '../_config.php');
+define('XCSSCONFIG', '../config.php');
 define('XCSSCLASS', '../xcss-class.php');
 include XCSSCONFIG;
 
@@ -29,6 +29,7 @@ function check_file($file_array, $file_path, $to_master, $master_filename)
 				{
 					$glob_css_file = $file_path.dirname($css_file).'/'.basename(str_replace('.xcss', '.css', $glob_xcss_file));
 				}
+				
 				if(filemtime($glob_xcss_file) > filemtime($glob_css_file))
 				{
 					return TRUE;
