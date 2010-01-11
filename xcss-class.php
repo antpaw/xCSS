@@ -277,11 +277,11 @@ class xCSS
 		$units = array('px', '%', 'em', 'pt', 'cm', 'mm');
 		$units_count = count($units);
 		
-		preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result);
+		preg_match_all('/:.*?\[(.*)\](( |;)|.+?\S)/', $content, $result);
 		$count_results = count($result[1]);
 		for($i = 0; $i < $count_results; $i++)
 		{
-			$better_math_str = $result[1][$i];
+			$better_math_str = strtr($result[1][$i], array('[' => '(', ']' => ')'));
 			if(strpos($better_math_str, '#') !== FALSE)
 			{
 				preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
@@ -328,7 +328,7 @@ class xCSS
 			}
 			else
 			{
-				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $result[1][$i]);
+				$better_math_str = preg_replace("/[^\d\*\+\-\/\(\)]/", NULL, $better_math_str);
 				$new_unit = NULL;
 				if($result[2][$i] === ';' || $result[2][$i] === ' ')
 				{
