@@ -3,7 +3,7 @@
  * xCSS class
  *
  * @author     Anton Pawlik
- * @version    1.0.0
+ * @version    1.0.1
  * @see        http://xcss.antpaw.org/docs/
  * @copyright  (c) 2009 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
@@ -328,7 +328,7 @@ class xCSS
 			}
 			else
 			{
-				$better_math_str = preg_replace("/[^\d\*\+\-\/\(\)]/", NULL, $better_math_str);
+				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $better_math_str);
 				$new_unit = NULL;
 				if($result[2][$i] === ';' || $result[2][$i] === ' ')
 				{
