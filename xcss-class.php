@@ -5,7 +5,7 @@
  * @author     Anton Pawlik
  * @version    1.0.1
  * @see        http://xcss.antpaw.org/docs/
- * @copyright  (c) 2009 Anton Pawlik
+ * @copyright  (c) 2010 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
  */
 
@@ -189,7 +189,7 @@ class xCSS
 					{
 						$master_content = preg_replace("/\/\*(.*)?\*\//Usi", NULL, $master_content);				
 					}
-					rsort($this->final_file);
+					$this->final_file = array_reverse($this->final_file);
 					foreach($this->final_file as $fcont)
 					{
 						$master_content .= $this->use_vars($fcont);
@@ -276,13 +276,17 @@ class xCSS
 	{
 		$units = array('px', '%', 'em', 'pt', 'cm', 'mm');
 		$units_count = count($units);
+		preg_match_all('/(\[(?:[^\[\]]|(?R))*\])((?:(?: |	)|;)|.+?\S)/', $content, $result);
 		
-		preg_match_all('/:.*?\[(.*)\](( |;)|.+?\S)/', $content, $result);
-		$count_results = count($result[1]);
+		$count_results = count($result[0]);
 		for($i = 0; $i < $count_results; $i++)
 		{
 			$better_math_str = strtr($result[1][$i], array('[' => '(', ']' => ')'));
-			if(strpos($better_math_str, '#') !== FALSE)
+			if (strpos($better_math_str, '=') !== FALSE)
+			{
+				continue;
+			}
+			if (strpos($better_math_str, '#') !== FALSE)
 			{
 				preg_match_all('/#(\w{6}|\w{3})/', $better_math_str, $colors);
 				for($y = 0; $y < count($colors[1]); $y++)
@@ -329,8 +333,12 @@ class xCSS
 			else
 			{
 				$better_math_str = preg_replace("/[^\d\*+-\/\(\)]/", NULL, $better_math_str);
+				if ($better_math_str === '()' || $better_math_str === '')
+				{
+					continue;
+				}
 				$new_unit = NULL;
-				if($result[2][$i] === ';' || $result[2][$i] === ' ')
+				if($result[2][$i] === ';' || $result[2][$i] === ' ' || $result[2][$i] === '	')
 				{
 					$all_units_count = 0;
 					for($x = 0; $x < $units_count; $x++)
@@ -351,12 +359,7 @@ class xCSS
 				$better_math_str = $this->calc_string($better_math_str) . $new_unit;
 			}
 			
-			$content = str_replace(array('#['.$result[1][$i].']', '['.$result[1][$i].']'), $better_math_str, $content);
-		}
-		
-		if($count_results > 0 && preg_match_all('/:.*\[(.*)\](( |;)|.+?\S)/', $content, $result) > 0)
-		{
-			$content = $this->do_math($content);
+			$content = str_replace(array('#'.$result[1][$i], $result[1][$i]), $better_math_str, $content);
 		}
 		
 		return $content;

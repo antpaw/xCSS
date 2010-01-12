@@ -4,7 +4,7 @@
  *
  * @author     Anton Pawlik
  * @see        http://xcss.antpaw.org/docs/
- * @copyright  (c) 2009 Anton Pawlik
+ * @copyright  (c) 2010 Anton Pawlik
  * @license    http://xcss.antpaw.org/about/
  */
 
